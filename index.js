@@ -29,8 +29,22 @@ async function run() {
     app.get("/services", async (req, res) => {
       const query = {};
       const cursor = serviceCollection.find(query);
+      const services = await cursor.limit(3).toArray();
+      res.send(services);
+    });
+
+    app.get("/servicesAll", async (req, res) => {
+      const query = {};
+      const cursor = serviceCollection.find(query);
       const services = await cursor.toArray();
       res.send(services);
+    });
+
+    // services post api
+    app.post("/services", async (req, res) => {
+      const review = req.body;
+      const result = await serviceCollection.insertOne(review);
+      res.send(result);
     });
 
     // find service by id
@@ -53,6 +67,29 @@ async function run() {
     app.post("/reviews", async (req, res) => {
       const review = req.body;
       const result = await reviewsCollection.insertOne(review);
+      res.send(result);
+    });
+
+    // update review
+
+    app.patch("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const message = req.body.message;
+      const query = { _id: ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          message: message,
+        },
+      };
+      const result = await reviewsCollection.updateOne(query, updateDoc);
+      res.send(result);
+    });
+
+    // Delete Review
+    app.delete("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const result = await reviewsCollection.deleteOne(query);
       res.send(result);
     });
   } finally {
