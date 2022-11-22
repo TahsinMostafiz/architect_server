@@ -21,6 +21,9 @@ async function run() {
     const serviceCollection = client
       .db("architectServer")
       .collection("services");
+    const reviewsCollection = client
+      .db("architectServer")
+      .collection("reviews");
 
     //services api
     app.get("/services", async (req, res) => {
@@ -36,6 +39,21 @@ async function run() {
       const query = { _id: ObjectId(id) };
       const service = await serviceCollection.findOne(query);
       res.send(service);
+    });
+
+    // reviews get api
+    app.get("/reviews", async (req, res) => {
+      const query = {};
+      const cursor = reviewsCollection.find(query);
+      const reviews = await cursor.toArray();
+      res.send(reviews);
+    });
+
+    // reviews post api
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewsCollection.insertOne(review);
+      res.send(result);
     });
   } finally {
   }
