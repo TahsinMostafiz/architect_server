@@ -17,6 +17,22 @@ const client = new MongoClient(uri, {
   serverApi: ServerApiVersion.v1,
 });
 
+//JWT function
+function verifyJWT(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  const token = authHeader.split(" ")[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function (err, decoded) {
+    if (err) {
+      return res.status(403).send({ message: "Forbidden access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+}
+
 async function run() {
   try {
     const serviceCollection = client
@@ -25,6 +41,15 @@ async function run() {
     const reviewsCollection = client
       .db("architectServer")
       .collection("reviews");
+
+    // jwt token api
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1d",
+      });
+      res.send({ token });
+    });
 
     //services api
     app.get("/services", async (req, res) => {
@@ -64,7 +89,12 @@ async function run() {
       res.send(reviews);
     });
 
-    app.get("/reviewsByUser", async (req, res) => {
+    app.get("/reviewsByUser", verifyJWT, async (req, res) => {
+      const decoded = req.decoded;
+      if (decoded.email !== req.query.email) {
+        res.status(403).send({ message: "Forbidden access" });
+      }
+
       let query = {};
       if (req.query.email) {
         query = {
